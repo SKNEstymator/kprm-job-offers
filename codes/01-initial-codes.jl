@@ -31,3 +31,9 @@ writedlm("data/kprm-anulowane.txt", anulowane |> freqtable |> (x -> sort(x, rev 
 
 ## wśród anulowanych są takie oferty, które były aktualne ale nie było ofert  -- proste warunki, trzeba inne te wpisać
 anulowane[contains.(lowercase.(anulowane), r"^(brak (ofert|kandyda|nadesł)|nie wpłynęła)")]
+
+## kategorie
+### zakonczony - ok (nawet jak zrezygnowali)
+### zakonczony - nie bylo nikogo
+### zakonczony - nie spełniały wymagań
+### zakonczony - blad / usuniecie oferty
