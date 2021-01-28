@@ -4,7 +4,7 @@ using DelimitedFiles
 using FreqTables
 
 ## wczytujemy dane
-m1 = vcat(readlines("./data-raw/kprm-new-data.json"), readlines("./data-raw/kprm-old-data.json"))
+m1 = vcat(readlines("./data-raw/kprm-old-data.json"))
 
 ## parsujemy i zmieniamy
 ogloszenia = [JSON3.read(i) for i in m1]
