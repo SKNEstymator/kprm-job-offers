@@ -4,6 +4,15 @@ output: html_notebook
 ---
 
 ```{r}
+library(data.table)
+```
 
+```{r}
+kprm <- readRDS("../data/kprm_df.rds")
+head(kprm, n = 10)
+```
+
+```{r}
+kprm[,.N, wynik_rezultat]
 ```
 
