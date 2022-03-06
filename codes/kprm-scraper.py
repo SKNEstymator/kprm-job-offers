@@ -16,7 +16,7 @@ import sys
 def insert_pipe(string, index):
     return string[:index] + '|' + string[index:]
     
-for i in range(1,3847):
+for i in range(1,4376):
   print(i)
   url = 'https://nabory.kprm.gov.pl/wyniki-naborow?AdResult%5BpagesCnt%5D=10&AdResult%5BisAdvancedMode%5D=&AdResult'\
   '%5Bsort%5D=1&AdResult%5Bid%5D=&AdResult%5Bid_institution%5D=&AdResult%5Bid_institution_position%5D=&search-button='\
@@ -55,9 +55,14 @@ for i in range(1,3847):
     url3 = url3.replace(",v7", "")
     
     bs3 = BeautifulSoup(get(url3).content, 'html.parser')
+    bs3_v7 = BeautifulSoup(get(url3 + ",v7").content, 'html.parser') ## wynagrodzenie od 7 wersji strony
+    
     if bs3.find('div', class_ = 'info-circle__content info-circle__content--salary info-circle__content--small-text'):
       salary = \
       bs3.find('div', class_ = 'info-circle__content info-circle__content--salary info-circle__content--small-text').get_text().strip()
+    elif bs3_v7.find('div', class_ = 'info-circle__content info-circle__content--salary info-circle__content--small-text'):
+      salary = \
+      bs3_v7.find('div', class_ = 'info-circle__content info-circle__content--salary info-circle__content--small-text').get_text().strip()
     else:
       salary = 'nie podano wynagrodzenia'
     if bs3.find('div', class_= 'box cir cir-1 cir-status')  :
