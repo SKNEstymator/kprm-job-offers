@@ -105,6 +105,6 @@ for i in range(1,4376):
     re.sub(r'(\s+|\n)', ' ', education), requirements,
     additional_requirements, re.sub(r'(\s+|\n)', ' ', views)]
       
-    with codecs.open('kprm-old-data.json', 'a') as f:
+    with codecs.open('kprm-updated.json', 'a') as f:
       json.dump(data, f, ensure_ascii=False)
       f.write('\n')
