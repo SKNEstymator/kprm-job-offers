@@ -9,10 +9,23 @@ library(data.table)
 
 ```{r}
 kprm <- readRDS("../data/kprm_df.rds")
+dim(kprm)
 head(kprm, n = 10)
 ```
 
+
 ```{r}
-kprm[,.N, wynik_rezultat]
+library(tidygeocoder)
+library(rgugik)
+```
+
+```{r}
+geocode(.tbl = data.frame(name = "afsaf",
+                   addr= "87-500 Rypin, Poland"),
+        addr)
+```
+
+```{r}
+rgugik::geocodePL_get(address = "87-500 Rypin")
 ```
 
