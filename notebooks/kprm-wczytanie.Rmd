@@ -5,14 +5,98 @@ output: html_notebook
 
 ```{r}
 library(data.table)
+library(stringr)
 ```
 
 ```{r}
 kprm <- readRDS("../data/kprm_df.rds")
-dim(kprm)
 head(kprm, n = 10)
+class(kprm)
 ```
 
+```{r}
+kprm[, .N, by = wakaty][order(-N)]
+kprm[wakaty == 5, .N, wynik_rezultat][order(-N)]
+kprm[wakaty == 5 & wynik_rezultat == "Wyniki naboru: nabór zakończony wyborem kandydatki/kandydata", .(wynik_szczegoly)]
+```
+
+Czyścimy kolumnę zawierającą wynik naboru
+
+```{r}
+kprm[, wynik_rezultat2 := str_remove(wynik_rezultat, "Wyniki naboru: ")]
+kprm[, .N, wynik_rezultat2][order(-N)]
+kprm[wynik_rezultat2 == "anulowano nabór", .N, .(szczegoly = tolower(wynik_szczegoly))][order(-N)]
+```
+Dzielimy na 3 kategorie
+
+1 - wynik pozytywny - znaleziono kandydatów
+
+c("nabór zakończony wyborem kandydatki/kandydata", "informacja o zatrudnieniu kandydatki/kandydata", 
+ "nabór zakończony zatrudnieniem kandydatki/kandydata", "decyzja kandydatki/kandydata o rezygnacji z objęcia stanowiska")
+ 
+2 - wynik negatywny - nie znaleziono kandydatów
+
+Może być anulowano wynik ale powinna być informacja w kolumnie wynik_szczegoly, że jest brak ofert, nie było kadndyatów itp 
+
+c("nabór zakończony bez wyboru kandydatki/kandydata", "brak ofert kandydatek/kandydatów", 
+"nabór zakończony bez zatrudnienia kandydatki/kandydata", "nie wyłoniono najlepszych kandydatek/kandydatów", 
+"nie zatrudniono kandydatki/kandydata", "oferty kandydatek/kandydatów nie spełniały wymagań formalnych")
+
+3 - anulowano wynik 
+
+c("brak ofert", "brak kandydatów", "nie wpłynęła żadna oferta")
+
+
+```{r}
+wyn1 <- c("nabór zakończony wyborem kandydatki/kandydata", "informacja o zatrudnieniu kandydatki/kandydata", 
+          "nabór zakończony zatrudnieniem kandydatki/kandydata", "decyzja kandydatki/kandydata o rezygnacji z objęcia stanowiska")
+
+wyn2a <- c("brak ofert", "brak kandydatów", "nie wpłynęła żadna oferta")
+wyn2b <- c("nabór zakończony bez wyboru kandydatki/kandydata", "brak ofert kandydatek/kandydatów", 
+           "nabór zakończony bez zatrudnienia kandydatki/kandydata", "nie wyłoniono najlepszych kandydatek/kandydatów", 
+           "nie zatrudniono kandydatki/kandydata", "oferty kandydatek/kandydatów nie spełniały wymagań formalnych")
+
+kprm[, wynik_naboru := fcase(wynik_rezultat2 %in% wyn1, "wynik pozytywny",
+                             (wynik_rezultat2 == "anulowano nabór" & tolower(wynik_szczegoly) %in% wyn2a) |
+                              wynik_rezultat2 %in% wyn2b, "wynik negatywny",
+                             default = "anulowano")]
+
+kprm[, .N, wynik_naboru]
+```
+
+Mamy przypadki gdzie podane są wymiary etatu w następujacy sposób:
+- określony etat
+- do wyboru (np. 1 lub 0.5, 1/2 lub 3/4)
+- w przypadku gdy jest więcej niż jeden wakat może być podane tak 1 i 0.5, ...
+
+```{r}
+kprm[, .N, keyby=.(wakaty, etat)]
+kprm[, etat2 := str_replace(etat, ",", ".")]
+kprm[str_detect(etat2, "^\\d{1,2}\\s{0,1}/\\s{0,1}\\d{1,2}$"), etat2:=eval(parse(text = etat2))]
+kprm[, .N, etat2][order(-N)]
+```
+
+```{r}
+tail(kprm)
+kprm[, .N, keyby=poz]
+```
+
+Zespół 1
+- wyczyścił kolumnę etat - wyciągnąc informację o etacie z kolumny etat (część już zrobiliśmy w trakcie spotkania)
+- wykszt - kolumna wykształcenie - trzy kolumny wyksz_min_pod wyksz_min_sr, wyksz_min_wyz 
+
+Zespół 2
+- dalszym czyszczeniem kolumny wynik_rezultat korzystająć z przykładów z tego notatnika (głównie przejrzeć "anulowano nabór" i jaka była przyczyna anulowania)
+- dni_rekrtuacja - analiza według uzyskanej kolumny zawierającej rezultat rekrutacji
+
+Zespół 3
+- czyszczenie kolumny poz i przypisanie do odpowiedniej grupy zawodowej załącznik 1 z https://isap.sejm.gov.pl/isap.nsf/download.xsp/WDU20210000797/O/D20210797.pdf
+- ewentualnie: doświadczenie na podstawie kolumny wymagania 
+
+
+```{r}
+kprm[poz == "inspektor farmaceutyczny"]
+```
 
 ```{r}
 library(tidygeocoder)
