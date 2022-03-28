@@ -61,19 +61,23 @@ kody_6 <- do.call("rbind", kody_6)
 kody_6_prob <- lapply(fnames[grep("top5_\\d{2}k_2", fnames)], npyLoad)
 kody_6_prob <- do.call("rbind", kody_6_prob)
 
+kody_6_df <- data.frame(id = kprm$id,
+                       zawod6_kod1 = unname(unlist(kody6[kody_6[,1]+1])),
+                       zawod6_prob1 = kody_6_prob[,1],
+                       zawod6_kod2 = unname(unlist(kody6[kody_6[,2]+1])),
+                       zawod6_prob2 = kody_6_prob[,2])
 
-kody_6 <- data.frame(id = kprm$id,
-                     zawod6_kod = unname(unlist(kody6[kody_6[,1]+1])),
-                     zawod6_prob = kody_6_prob[,1])
-kody_6 <- setDT(kody_6)
 
-kody_6 <- kody_6[, head(.SD, 1), id]
+kody_6_df <- setDT(kody_6_df)
+
+kody_6_df <- kody_6_df[, head(.SD, 1), id]
+kody_6_df[zawod6_kod1 == "242217", .N, zawod6_kod2][order(-N)]
 ```
 Łączymy w jeden plik
 
 ```{r}
 kody_zaw <- merge(x = dd[, .(id, zawod1_kod, zawod1_prob)],
-                  y = kody_6,
+                  y = kody_6_df,
                   by = "id",
                   all.x = T)
 dim(kody_zaw)
