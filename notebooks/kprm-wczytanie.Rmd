@@ -95,7 +95,7 @@ Zespół 3
 
 
 ```{r}
-kprm[poz == "inspektor farmaceutyczny"]
+kprm[, .N, poz ][order(N)]
 ```
 
 ```{r}

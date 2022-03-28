@@ -1,0 +1,97 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(RcppCNPy)
+library(data.table)
+library(RcppSimdJson)
+```
+
+Wczytanie danych z KPRM
+
+```{r}
+kprm <- readRDS("../data/kprm_df.rds")
+head(kprm)
+```
+W danych są 72 duplikaty -- na koniec je poprawiam
+
+```{r}
+kprm[,.N, id][N> 1]
+kprm[id == "NR 59604"]
+```
+
+Wczytuje dane z dysku
+
+```{r}
+fnames <- list.files("~/git/zbiory/kprm/kprm_pred", full.names = T)
+dd <- lapply(fnames[grep("kprm_pred_1_\\d{2}", fnames)], npyLoad)
+dd <- do.call('rbind',dd)
+colnames(dd) <- paste("zawod", c(1:5, 7:9), sep ="_")
+dd <- as.data.frame(dd)
+dd$zawod1_kod <- apply(dd, 1, which.max)
+dd$zawod1_kod <- ifelse(dd$zawod1_kod >= 6, dd$zawod1_kod+1, dd$zawod1_kod)
+dd$zawod1_prob <- apply(dd[,1:8], 1, max)
+dd$id <- kprm$id
+dd <- setDT(dd)
+dd <- dd[, head(.SD, 1), id]
+head(dd)
+```
+
+Wczytujemy kody 6 cyfrowe
+
+1. lista kodów
+
+```{r}
+kody6 <- fload(json = fnames[17])
+kody6[[1]]
+```
+
+Pliki: _1 - kody zawodów, _2 - prawdopodobieństwo
+
+```{r}
+fnames[grep("top5_\\d{2}", fnames)]
+```
+
+
+```{r}
+kody_6 <- lapply(fnames[grep("top5_\\d{2}k_1", fnames)], npyLoad, type = "integer")
+kody_6 <- do.call("rbind", kody_6)
+kody_6_prob <- lapply(fnames[grep("top5_\\d{2}k_2", fnames)], npyLoad)
+kody_6_prob <- do.call("rbind", kody_6_prob)
+
+
+kody_6 <- data.frame(id = kprm$id,
+                     zawod6_kod = unname(unlist(kody6[kody_6[,1]+1])),
+                     zawod6_prob = kody_6_prob[,1])
+kody_6 <- setDT(kody_6)
+
+kody_6 <- kody_6[, head(.SD, 1), id]
+```
+Łączymy w jeden plik
+
+```{r}
+kody_zaw <- merge(x = dd[, .(id, zawod1_kod, zawod1_prob)],
+                  y = kody_6,
+                  by = "id",
+                  all.x = T)
+dim(kody_zaw)
+
+head(kody_zaw, 10)
+```
+
+
+Zapis
+
+```{r}
+saveRDS(kody_zaw, file = "../data/kprm_zawody_df.rds")
+```
+
+
+Poprawa danych i usuniecie duplikatów z głównego pliku
+
+```{r}
+saveRDS(object = kprm[, head(.SD, 1), id], file = "../data/kprm_df.rds")
+```
+
