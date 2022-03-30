@@ -56,15 +56,13 @@ kody_6_df[, ":="(zawod6_kod1=as.character(zawod6_kod1),
 
 head(kody_6_df)
 ```
-Łączymy w jeden plik
-
-
 Nazwy zawodów
 
 ```{r}
-zawody <- read_excel("~/git/nauka/job-offers-classification/data-raw/occup-codes/ksiz_kody_2022.xlsx",
-                     skip = 7, col_names = c("zawod_kod", "zawod_nazwa"))
-zawody <- setDT(zawody)
+zawody <- readRDS("~/git/nauka/job-offers-classification/data/ksiz-occups-desc-wide.rds")
+zawody <- zawody[,1:2]
+setnames(zawody, c("zawod", "nazwa"), c("zawod_kod","zawod_nazwa"))
+head(zawody)
 ```
 
 ```{r}
@@ -80,11 +78,22 @@ kody_zaw <- merge(x = kody_zaw,
                   by.y = "zawod_kod",
                   all.x = T)
 
-kody_zaw <- kody_zaw[, .(id, zawod1_kod, zawod1_prob, 
-             zawod6_kod1, zawod6_prob1, zawod6_nazwa1 = zawod_nazwa.x,
-             zawod6_kod2, zawod6_prob2, zawod6_nazwa2 = zawod_nazwa.y)]
+kody_zaw[, zawod1_nazwa := fcase(zawod1_kod == 1, "1.Przedstawiciele władz publicznych, wyżsi urzędnicy i kierownicy",
+                                 zawod1_kod == 2, "2.Specjaliści",
+                                 zawod1_kod == 3, "3.Technicy i inny średni personel",
+                                 zawod1_kod == 4, "4.Pracownicy biurowi", 
+                                 zawod1_kod == 5, "5.Pracownicy usług i sprzedawcy",
+                                 zawod1_kod == 6, "6.Rolnicy, ogrodnicy, leśnicy i rybacy",
+                                 zawod1_kod == 7, "7.Robotnicy przemysłowi i rzemieślnicy",
+                                 zawod1_kod == 8, "8.Operatorzy i monterzy maszyn i urządzeń", 
+                                 zawod1_kod == 9, "9.Pracownicy wykonujący prace proste")]
 
-kody_zaw[,.N, .(zawod6_kod1,zawod6_nazwa1)][order(-N)]
+kody_zaw <- kody_zaw[, .(id, 
+                         zawod1_kod, zawod1_prob, zawod1_nazwa,
+                         zawod6_kod1, zawod6_prob1, zawod6_nazwa1 = zawod_nazwa.x,
+                         zawod6_kod2, zawod6_prob2, zawod6_nazwa2 = zawod_nazwa.y)]
+
+kody_zaw[, .(n=sum(zawod1_prob)), keyby = zawod1_nazwa]
 ```
 
 Zapis
