@@ -93,7 +93,7 @@ kody_zaw <- kody_zaw[, .(id,
                          zawod6_kod1, zawod6_prob1, zawod6_nazwa1 = zawod_nazwa.x,
                          zawod6_kod2, zawod6_prob2, zawod6_nazwa2 = zawod_nazwa.y)]
 
-kody_zaw[, .(n=sum(zawod1_prob)), keyby = zawod1_nazwa]
+kody_zaw[, .N, keyby = zawod6_nazwa1][order(-N)]
 ```
 
 Zapis
