@@ -18,7 +18,7 @@ sys.setdefaultencoding('utf-8')
 def insert_pipe(string, index):
     return string[:index] + '|' + string[index:]
     
-for i in range(1,8752): #8019
+for i in range(1,9861): #8019
   print(i)
   url = 'https://nabory.kprm.gov.pl/wyniki-naborow?AdResult%5BpagesCnt%5D=10&AdResult'\
   '%5BisAdvancedMode%5D=&AdResult%5Bsort%5D=1&AdResult%5Bid%5D=&AdResult%5Bid_institution'\

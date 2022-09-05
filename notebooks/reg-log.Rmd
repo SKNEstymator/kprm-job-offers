@@ -1,0 +1,80 @@
+---
+title: "R Notebook"
+output: html_notebook
+---
+
+```{r}
+library(data.table)
+```
+
+```{r}
+kprm <- readRDS("../data/kprm_df.rds")
+krpm_zawody <- readRDS("../data/kprm_zawody_df.rds")
+head(krpm_zawody)
+
+head(kprm)
+
+kprm_podzbior <- kprm[!grepl("anulowano", wynik_rezultat), .(id, wynik_rezultat,wakaty)]
+kprm_podzbior[, zatrudnienie := grepl("zakończony wyborem|informacja o zatrudnieniu|nabór zakończony zatrudnieniem", wynik_rezultat)]
+kprm_podzbior[, .N,.(zatrudnienie)][, p:=N/sum(N)]
+
+krpm_zawody_podzbior <- krpm_zawody[substr(zawod6_kod1,1,1) %in% 1:4, .(id, kod2 = substr(zawod6_kod1,1,2))]
+
+kprm_podzbior_final <- merge(x = kprm_podzbior,
+                             y = krpm_zawody_podzbior,
+                             by = "id")
+
+kprm_podzbior_final
+```
+
+$$
+Y = \begin{cases}
+ 0 & \text{ogłoszenie nie znalazło kandydatów/tek}\\
+ 1 & \text{zostało obsadzone}
+\end{cases}
+$$
+Chcemy zbudować model, który wyjaśni powyższego Y.
+
+- wymagania są za wysokie 
+- pracodawca
+- pozycja / kod zawodu
+- lokalny rynek pracy (miejsce pracy)
+
+
+Omitted variable bias [pakiet: ]
+
+
+
+$$
+P(Y = 1 | X_1, X_2, ...)
+$$
+
+
+To co dziś zrobimy to zbudujemy model, w którym chcemy wyjaśnić czy dane ogłoszenie o pracę znalazło kandydata/kę w zależnosci od tego jaki był to zawód. 
+
+
+```{r}
+prop.table(xtabs(~kod2 + zatrudnienie, kprm_podzbior_final), margin = 1)
+plot(xtabs(~kod2 + zatrudnienie, kprm_podzbior_final))
+summary(xtabs(~kod2 + zatrudnienie, kprm_podzbior_final))
+```
+Y ~ X1 + X2 + X3 .... 
+
+```{r}
+head(model.matrix(zatrudnienie ~ kod2, kprm_podzbior_final))
+```
+
+```{r}
+model1 <- glm(formula = zatrudnienie ~ kod2, data = kprm_podzbior_final, family = binomial())
+summary(model1)
+```
+
+$$
+P(zatrudnienie = 1| kod2) = \frac{\exp(0.678477 + 0.18(kod == 12) -0.06(kod == 13) + ...)}{1 + \exp(0.678477 + 0.18(kod == 12) -0.06(kod == 13) + ...)}
+$$
+
+```{r}
+exp(coef(model1))
+```
+
+

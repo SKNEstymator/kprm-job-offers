@@ -7,6 +7,7 @@ output: html_notebook
 library(data.table)
 library(RcppSimdJson)
 library(readxl)
+library(stringr)
 ```
 
 Wczytanie danych z KPRM
@@ -14,7 +15,9 @@ Wczytanie danych z KPRM
 ```{r}
 kprm <- readRDS("../data/kprm_df.rds")
 head(kprm)
+kprm[, .N, poz][order(-N)]
 ```
+
 
 Wczytuje dane z dysku
 
@@ -65,6 +68,7 @@ setnames(zawody, c("zawod", "nazwa"), c("zawod_kod","zawod_nazwa"))
 head(zawody)
 ```
 
+
 ```{r}
 kody_zaw <- merge(x = kody_6_df,
                   y = zawody,
@@ -102,6 +106,70 @@ Zapis
 saveRDS(kody_zaw, file = "../data/kprm_zawody_df.rds")
 ```
 
+
+
+Dokładnie takie same nazwy występują w spisie zawodów -- sprawdzamy
+
+```{r}
+exact_names <- merge(x = kprm[, .N, .(zawod_nazwa = poz)],
+                     y = zawody[, zawod_nazwa := tolower(zawod_nazwa)],
+                     by = "zawod_nazwa")
+
+exact_names[, counts:= apply(exact_names[, "zawod_nazwa"], 1, function(x) sum(grepl(x, zawody$zawod_nazwa)))]
+exact_names[counts == 1]
+```
+242213, 334102, 315209, 421402
+
+```{r}
+fwrite(x = kprm[id %in% merge(x = kprm[, .(id, poz)], y = kody_zaw[, .(id, zawod6_kod1)], by = "id")[poz %in% exact_names[counts == 1]$zawod_nazwa]$id][order(poz)],
+       file = "~/git/zbiory/kprm/zawody-weryfikacja.csv")
+```
+
+Do uczenia
+
+```{r}
+kprm[str_detect(poz, "radca prawny"), .N, poz]
+```
+
+```{r}
+kprm_res <- kprm[str_detect(poz, "bosman portu|główny księgowy|inspektor farmaceutyczny|inspektor nadzoru budowlanego|inspektor ochrony środowiska|inspektor rybołówstwa morskiego|kierownik kancelarii tajnej|kierownik projektu|legalizator|oficer portu|poborca skarbowy|radca prawny")]
+
+kprm_res <- kprm_res[,.N, .(poz, prac, adr_gdzie, zakres, wykszt, wymagania, wymagania_dod)]
+kprm_res[, wykszt:=str_remove(wykszt, "Wykształcenie\\: ")]
+kprm_res[, N:=NULL]
+
+head(kprm_res)
+kprm_res[, desc:= str_c(sep = " ", poz, prac, adr_gdzie, zakres, wykszt, wymagania, wymagania_dod)]
+
+kprm_res[, class := fcase(str_detect(poz, "bosman portu"), "315202",
+                          str_detect(poz, "główny księgowy"), "121101",
+                          str_detect(poz, "inspektor farmaceutyczny"), "242208",
+                          str_detect(poz, "inspektor nadzoru budowlanego"), "242211",
+                          str_detect(poz, "inspektor ochrony środowiska"), "325504",
+                          str_detect(poz, "inspektor rybołówstwa morskiego"), "242213",
+                          str_detect(poz, "kierownik kancelarii tajnej"), "334102",
+                          str_detect(poz, "kierownik projektu"), "121904",
+                          str_detect(poz, "legalizator"), "214921",
+                          str_detect(poz, "oficer portu"), "315209",
+                          str_detect(poz, "poborca skarbowy"), "421402",
+                          str_detect(poz, "radca prawny"), "261103")]
+
+fwrite(x = kprm_res[, .(class, desc)],
+       file = "~/git/nauka/job-offers-classification/data/kprm-desc.csv")
+```
+
+
+
+"referendarz" 261908 [podreferendarz] 
+"inspektor nadzoru budowlanego" - 242211 [starszy inspektor nadzoru budowlanego]
+"wizytator" - 235109
+radca prawny - 261103
+główny księgowy	 - 121101
+inspektor farmaceutyczny	 - 242208
+naczelnik wydziału	 - 121303
+inspektor ochrony środowiska	 - 325504
+pełnomocnik do spraw ochrony informacji niejawnych	 242110 (?)
+legalizator 214921
 
 
 
