@@ -113,12 +113,17 @@ for i in range(1,9861): #8019
         additional_requirements[ind] = re.sub(r'(\s+|\n)', ' ', additional.get_text())
 #       else:
 #         additional_requirements = 'brak dodatkowych wymagan'
-      
+#     correspondence with reference number
+      additional_corresp = bs3.select('div > section')[6].findChildren('li')
+      for ind, additional in enumerate(additional_corresp):
+        additional_corresp[ind] = re.sub(r'(\s+|\n)', ' ', additional.get_text())
+        
     if bs3.find('div', class_ = 'col-lg-12'):
       views = bs3.find('div', class_ = 'col-lg-12').get_text()
     else:
       views = 'brak liczby odwiedzin'
       # dane do pliku json o nazwie 'data'
+    
     data = [job_id, job_title, institution, city, 
             address2,  ## 
             work_place2,  ## miejsce pracy ze strony ogłoszenia
@@ -130,7 +135,7 @@ for i in range(1,9861): #8019
     re.sub(r'(\s+|\n)', ' ', result2), re.sub(r'(\s+|\n)', ' ', salary), positions,
     work_time, state, responsibilities,
     re.sub(r'(\s+|\n)', ' ', education), requirements,
-    additional_requirements, re.sub(r'(\s+|\n)', ' ', views)]
+    additional_requirements, additional_corresp, re.sub(r'(\s+|\n)', ' ', views)]
       
     with codecs.open('kprm-with-salary.json', 'a') as f:
       json.dump(data, f, ensure_ascii=False)
